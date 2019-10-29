@@ -17,6 +17,7 @@ import qualified Prometheus                        as P
 import           Streamly                          (MonadAsync, SerialT)
 import qualified Streamly.Extra                    as SE
 import           Streamly.Extra.Logging            (info, metricsInfo)
+import           Streamly.Internal                 (Fold (..))
 import qualified Streamly.Prelude                  as SP
 
 type MetricName = Text
@@ -84,6 +85,15 @@ finiteWithRateGauge ::
 finiteWithRateGauge logger s =
   SP.mapMaybe id $
   SP.takeWhile isJust $ SE.withRateGauge logger $ (Just <$> s) <> pure Nothing
+
+-- Does @action at @interval and returns the stream as is
+doAt :: (Monad m) => Int -> (a -> m ()) -> SerialT m a -> SerialT m a
+doAt interval action = SP.tap (Fold step begin end)
+  where
+    step 0 a = action a $> interval
+    step n _ = pure (n - 1)
+    begin = pure interval
+    end = const (pure ())
 
 inc :: P.MonadMonitor m => Metric -> m ()
 inc (Counter c) = P.incCounter c

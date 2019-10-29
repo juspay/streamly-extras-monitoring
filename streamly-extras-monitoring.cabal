@@ -1,0 +1,37 @@
+cabal-version:       2.4
+name:                streamly-extras-monitoring
+version:             0.0.1
+synopsis:            Helper functions for logging and metrics of streams
+homepage:            https://github.com/juspay/streamly-extras-monitoring
+license:             BSD-3-Clause
+license-file:        LICENSE
+author:              Puneet Pahuja
+maintainer:          puneet.pahuja@juspay.in
+category:            Monitoring
+extra-source-files:  CHANGELOG.md
+
+library
+  exposed-modules:   Streamly.Extra.Logging
+                   , Streamly.Extra.Metrics
+  default-extensions: OverloadedStrings
+                    , RankNTypes
+  build-depends:     base
+                   , basic-prelude
+                   , exceptions
+                   , monad-log
+                   , mtl
+                   , prometheus-client
+                   , streamly
+                   , streamly-extras
+                   , text
+                   , wai
+                   , wai-middleware-prometheus
+                   , warp
+  -- Directories containing source files.
+  hs-source-dirs:      src
+  -- Base language which the package is written in.
+  default-language:    Haskell2010
+  ghc-options:         -fdiagnostics-color=always
+                       -Wall
+
+

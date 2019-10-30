@@ -1,2 +1,2 @@
 # streamly-extras-monitoring
-Helper functions for logging and metrics of streams
+Helper functions for generic logging, generic metrics and Streamly specific metrics

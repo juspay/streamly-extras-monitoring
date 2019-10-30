@@ -14,6 +14,6 @@ mkDerivation {
     text wai wai-middleware-prometheus warp
   ];
   homepage = "https://github.com/juspay/streamly-extras-monitoring";
-  description = "Helper functions for logging and metrics of streams.";
+  description = "Helper functions for generic logging, generic metrics and Streamly specific metrics";
   license = stdenv.lib.licenses.bsd3;
 }

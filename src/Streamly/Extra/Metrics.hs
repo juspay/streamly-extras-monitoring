@@ -52,20 +52,20 @@ data LoggerDetails =
     , metrics      :: [Metric]
     }
 
+-- gauges are set with rate/sec
 streamlyInfoLogger :: SE.Logger LoggerDetails
 streamlyInfoLogger LoggerDetails {..} _ n = do
-  mapM_ (updateMetric (fromIntegral n)) metrics
+  mapM_ (updateMetric intervalSecs (fromIntegral n)) metrics
   info label $
-    tag <> " " <> action <> " at the rate of " <>
-    tshow (round (fromIntegral n / intervalSecs) :: Integer) <>
-    " " <>
+    tag <> " " <> action <> " at the rate of " <> tshow ratePerSec <> " " <>
     unit <>
     "/sec"
   where
-    updateMetric val metric =
+    ratePerSec = round (fromIntegral n / intervalSecs) :: Integer
+    updateMetric timeInterval val metric =
       case metric of
         Counter c -> void $ P.addCounter c val
-        Gauge g   -> P.setGauge g val
+        Gauge g   -> P.setGauge g (val / timeInterval)
 
 -- run this inside a forkIO
 initMetricsServer :: Int -> IO ()
@@ -78,10 +78,9 @@ initMetricsServer port = do
 -- `withRateGauge`, by its nature, outputs an infinite stream even if the input stream is finite.
 -- This function outputs a finite stream if the input stream is finite.
 finiteWithRateGauge ::
-     forall m a logger. Applicative m
-  => MonadAsync m =>
-       MonadReader (SE.LoggerConfig logger) m =>
-         logger -> SerialT m a -> SerialT m a
+     forall m a logger. MonadAsync m
+  => MonadReader (SE.LoggerConfig logger) m =>
+       logger -> SerialT m a -> SerialT m a
 finiteWithRateGauge logger s =
   SP.mapMaybe id $
   SP.takeWhile isJust $ SE.withRateGauge logger $ (Just <$> s) <> pure Nothing

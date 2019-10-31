@@ -1,14 +1,7 @@
-{
-  withHoogle ? true
+{ withHoogle ? false
 }:
 let
-  inherit (import <nixpkgs> {}) fetchFromGitHub;
-  nixpkgs = fetchFromGitHub {
-    owner = "NixOS";
-    repo = "nixpkgs";
-    rev = "e8a36cdf57193e56514aa6eeff936159372f0ace";
-    sha256 = "1jxdqphacpzkvwpkw67w1222jnmyplzall4n9sdwznyipxz6bqsv";
-  };
+  nixpkgs = import ./nixpkgs.nix;
   config = {
     packageOverrides = pkgs: rec {
       haskellPackages = pkgs.haskellPackages.override {
@@ -17,32 +10,28 @@ let
             super.ghc // { withPackages = if withHoogle then super.ghc.withHoogle else super.ghc ; };
           ghcWithPackages =
             self.ghc.withPackages;
-          # Haskell actually has a broken package called vision
           streamly-extras-monitoring =
-            self.callPackage ./pkgs/streamly-extras-monitoring.nix { };
-          streamly-extras =
-            self.callPackage ./pkgs/streamly-extras.nix { };
-          streamly =
-            self.callPackage ./pkgs/streamly.nix { };
+            self.callCabal2nix "streamly-extras-monitoring" (pkgs.lib.cleanSource ./.) { };
+
+          streamly = self.callCabal2nix "streamly" (pkgs.fetchgit {
+            url = "https://github.com/composewell/streamly.git";
+            sha256 = "0qrsq2bnwchs8zjl4icazwhp76nlgfq8wbag2ip221y6h30vmrxi";
+            rev = "8a4d965a93b375cb62afb66b74580c751f2ce3ff";
+            fetchSubmodules = true;
+          }) { };
+
+          streamly-extras = self.callCabal2nix "streamly-extras" (pkgs.fetchgit {
+            url = "https://github.com/juspay/streamly-extras";
+            sha256 = "0ib0qvnkpzdzalxig4f9bnx5mkd4sri9sdrm403h6rxj18kkfr8k";
+            rev = "faea671b14560726ff780136828a57b3be8cdc47";
+            fetchSubmodules = true;
+          }) { };
+
         };
       };
     };
   };
+
   pkgs = import nixpkgs { inherit config; };
-  drv = pkgs.haskellPackages.streamly-extras-monitoring;
-in
-  if pkgs.lib.inNixShell
-    then
-      drv.env.overrideAttrs(attrs:
-        { buildInputs =
-          with pkgs.haskellPackages;
-          [
-            cabal-install
-            cabal2nix
-            ghcid
-            hindent
-            hlint
-            stylish-haskell
-          ] ++ [ zlib ] ++ attrs.buildInputs;
-        })
-        else drv
+
+in pkgs.haskell.lib.justStaticExecutables pkgs.haskellPackages.streamly-extras-monitoring

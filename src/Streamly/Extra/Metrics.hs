@@ -9,7 +9,7 @@ import           Control.Monad                     (void)
 import           Control.Monad.IO.Class            (MonadIO)
 import           Control.Monad.Reader              (MonadReader)
 import           Data.Functor                      (($>))
-import           Data.Maybe                        (isJust)
+import           Data.Maybe                        (fromMaybe, isJust)
 import           Data.Text                         (Text)
 import           Network.Wai.Handler.Warp          (run)
 import qualified Network.Wai.Middleware.Prometheus as PM
@@ -49,7 +49,7 @@ data LoggerDetails =
     , unit         :: Text
     , action       :: Text
     , intervalSecs :: Double
-    , metrics      :: [Metric]
+    , metrics      :: [(Metric, Maybe (Double -> Double))]
     }
 
 -- gauges are set with rate/sec
@@ -62,10 +62,11 @@ streamlyInfoLogger LoggerDetails {..} _ n = do
     "/sec"
   where
     ratePerSec = round (fromIntegral n / intervalSecs) :: Integer
-    updateMetric timeInterval val metric =
-      case metric of
-        Counter c -> void $ P.addCounter c val
-        Gauge g   -> P.setGauge g (val / timeInterval)
+    updateMetric timeInterval val (metric, maybeOp) =
+      let val' = (fromMaybe id maybeOp) val
+       in case metric of
+            Counter c -> void $ P.addCounter c val'
+            Gauge g   -> P.setGauge g (val' / timeInterval)
 
 -- run this inside a forkIO
 initMetricsServer :: Int -> IO ()

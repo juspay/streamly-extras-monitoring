@@ -55,18 +55,18 @@ data LoggerDetails =
 -- gauges are set with rate/sec
 streamlyInfoLogger :: SE.Logger LoggerDetails
 streamlyInfoLogger LoggerDetails {..} _ n = do
-  mapM_ (updateMetric intervalSecs (fromIntegral n)) metrics
-  info label $
-    tag <> " " <> action <> " at the rate of " <> tshow ratePerSec <> " " <>
-    unit <>
-    "/sec"
+  mapM_ (go intervalSecs (fromIntegral n)) metrics
   where
-    ratePerSec = round (fromIntegral n / intervalSecs) :: Integer
-    updateMetric timeInterval val (metric, maybeOp) =
+    go timeInterval val (metric, maybeOp) = do
       let val' = (fromMaybe id maybeOp) val
-       in case metric of
-            Counter c -> void $ P.addCounter c val'
-            Gauge g   -> P.setGauge g (val' / timeInterval)
+          ratePerSec = val' / timeInterval
+      case metric of
+        Counter c -> void $ P.addCounter c val'
+        Gauge g   -> P.setGauge g ratePerSec
+      info label $
+        tag <> " " <> action <> " at the rate of " <> tshow ratePerSec <> " " <>
+        unit <>
+        "/sec"
 
 -- run this inside a forkIO
 initMetricsServer :: Int -> IO ()

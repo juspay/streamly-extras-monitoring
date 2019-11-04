@@ -12,8 +12,8 @@
 * Updates nix files
 * Updates ghc options
 
-## 0.1.0 -- 2019-11-04
+## 1.0.0 -- 2019-11-04
 * Takes a `maybeOp` with each metric and applies that to the `n` before using it
 
-## 0.1.1 -- 2019-11-04
+## 1.0.1 -- 2019-11-04
 * Fixes logging inside `streamlyInfoLogger`

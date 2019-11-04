@@ -1,6 +1,6 @@
 cabal-version:       2.4
 name:                streamly-extras-monitoring
-version:             1.0.0
+version:             1.0.1
 synopsis:            Helper functions for logging and metrics of streams
 homepage:            https://github.com/juspay/streamly-extras-monitoring
 license:             BSD-3-Clause

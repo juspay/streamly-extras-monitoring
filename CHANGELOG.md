@@ -2,11 +2,9 @@
 #### Follows Semver versioning (semver.org)
 
 ## 0.0.1 -- 2019-10-29
-
 * First version. Released on an unsuspecting world.
 
 ## 0.1.0 -- 2019-10-31
-
 ### API changes
 * Adds `doAt` function
 * In `streamlyInfoLogger`, metric update for the gauge sets the gauge to rate/sec rather than rate/samplingTimeInterval
@@ -16,3 +14,6 @@
 
 ## 0.1.0 -- 2019-11-04
 * Takes a `maybeOp` with each metric and applies that to the `n` before using it
+
+## 0.1.1 -- 2019-11-04
+* Fixes logging inside `streamlyInfoLogger`

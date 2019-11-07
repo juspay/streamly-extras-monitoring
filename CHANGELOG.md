@@ -17,3 +17,6 @@
 
 ## 1.0.1 -- 2019-11-04
 * Fixes logging inside `streamlyInfoLogger`
+
+## 2.0.0 -- 2019-11-07
+* Adds `vector` and `label` support - Major design change

@@ -8,6 +8,7 @@ import           BasicPrelude                      (tshow)
 import           Control.Monad                     (void)
 import           Control.Monad.IO.Class            (MonadIO)
 import           Control.Monad.Reader              (MonadReader)
+import           Data.Bifunctor                    (first)
 import           Data.Functor                      (($>))
 import           Data.Maybe                        (fromMaybe, isJust)
 import           Data.Text                         (Text)
@@ -24,24 +25,122 @@ type MetricName = Text
 
 type MetricHelp = Text
 
-data Metric
-  = Counter P.Counter
-  | Gauge P.Gauge
+class P.MonadMonitor m =>
+      MonadMonitor m
+
+
+register :: MonadIO m => Metric s -> m s
+register (Metric s) = P.register s
+
+registerIO :: MonadIO m => m (Metric s) -> m s
+registerIO mMetric = mMetric >>= register
+
+--
+-- Counter
+--
+type Counter = P.Counter
+
+-- makes a counter
+mkCounter :: MetricName -> MetricHelp -> Metric Counter
+mkCounter name = Metric . P.counter . P.Info name
 
 -- makes and registers a counter
-counter :: MonadIO m => MetricName -> MetricHelp -> m Metric
-counter name help = do
-  let c = P.counter (P.Info name help)
-  rc <- P.register c
-  pure $ Counter rc
+-- gives you `m Counter` and not `Metric Counter`
+-- use this if you dont want `Metric Counter` in future, otherwise use `mkGauge`
+mkRegCounter :: MonadIO m => MetricName -> MetricHelp -> m Counter
+mkRegCounter name = register . mkCounter name
+
+getCounter :: MonadIO m => Counter -> m Double
+getCounter = P.getCounter
+
+incCounter :: MonadMonitor m => Counter -> m ()
+incCounter = P.incCounter
+
+-- returns the success status of the add operation
+addCounter :: MonadMonitor m => Counter -> Double -> m Bool
+addCounter = P.addCounter
+
+--
+-- Gauge
+--
+type Gauge = P.Gauge
+
+-- makes a gauge
+mkGauge :: MetricName -> MetricHelp -> Metric Gauge
+mkGauge name = Metric . P.gauge . P.Info name
 
 -- makes and registers a gauge
-gauge :: MonadIO m => MetricName -> MetricHelp -> m Metric
-gauge name help = do
-  let g = P.gauge (P.Info name help)
-  rg <- P.register g
-  pure $ Gauge rg
+-- gives you `m Gauge` and not `Metric Gauge`
+-- use this if you dont want `Metric Gauge` in future, otherwise use `mkGauge`
+mkRegGauge :: MonadIO m => MetricName -> MetricHelp -> m Gauge
+mkRegGauge name = register . mkGauge name
 
+getGauge :: MonadIO m => Gauge -> m Double
+getGauge = P.getGauge
+
+incGauge :: MonadMonitor m => Gauge -> m ()
+incGauge = P.incGauge
+
+addGauge :: MonadMonitor m => Gauge -> Double -> m ()
+addGauge = P.addGauge
+
+setGauge :: (MonadMonitor m) => Gauge -> Double -> m ()
+setGauge = P.setGauge
+
+--
+-- Vector
+--
+class P.Label l =>
+      Label l
+
+
+type Vector = P.Vector
+
+-- makes a vector
+mkVector :: Label l => l -> Metric s -> Metric (Vector l s)
+mkVector label (Metric s) = Metric . P.vector label $ s
+
+-- makes and registers a vector
+mkRegVector :: (MonadIO m, Label l) => l -> Metric a -> m (Vector l a)
+mkRegVector label = register . mkVector label
+
+withLabel ::
+     (Label l, MonadMonitor m) => Vector l s -> l -> (s -> IO ()) -> m ()
+withLabel = P.withLabel
+
+removeLabel :: (Label l, MonadMonitor m) => Vector l s -> l -> m ()
+removeLabel = P.removeLabel
+
+clearLabels :: (Label l, MonadMonitor m) => Vector l s -> m ()
+clearLabels = P.clearLabels
+
+getVectorWith :: Vector l s -> (s -> IO a) -> IO [(l, a)]
+getVectorWith = P.getVectorWith
+
+--
+-- Metric
+--
+newtype Metric s =
+  Metric (P.Metric s)
+
+type MaybeUpdateFn = Maybe (Double -> Double)
+
+data MetricDetails =
+  MetricDetails
+    { counters :: [(Counter, MaybeUpdateFn)]
+    , gauges   :: [(Gauge, MaybeUpdateFn)]
+    }
+
+-- run this inside a forkIO
+initMetricsServer :: Int -> IO ()
+initMetricsServer port = do
+  info metricsInfo $
+    "Starting metrics server at http://localhost:" <> tshow port <> "/"
+  run port (PM.prometheus PM.def PM.metricsApp)
+
+--
+-- Metrics Logger
+--
 data LoggerDetails =
   LoggerDetails
     { label        :: Text
@@ -49,33 +148,44 @@ data LoggerDetails =
     , unit         :: Text
     , action       :: Text
     , intervalSecs :: Double
-    , metrics      :: [(Metric, Maybe (Double -> Double))]
+    , metrics      :: MetricDetails
     }
 
+defaultLoggerDetails :: LoggerDetails
+defaultLoggerDetails =
+  LoggerDetails
+    { label = "defaultLabel"
+    , tag = "defaultTag"
+    , unit = "defaultUnit"
+    , action = "defaultAction"
+    , intervalSecs = 1.0
+    , metrics = MetricDetails {counters = [], gauges = []}
+    }
+
+data M
+  = C Counter
+  | G Gauge
+
 -- gauges are set with rate/sec
-streamlyInfoLogger :: SE.Logger LoggerDetails
+streamlyInfoLogger :: (MonadMonitor IO) => SE.Logger LoggerDetails
 streamlyInfoLogger LoggerDetails {..} _ n = do
-  mapM_ (go intervalSecs (fromIntegral n)) metrics
+  mapM_ (update intervalSecs (fromIntegral n)) (first C <$> counters metrics)
+  mapM_ (update intervalSecs (fromIntegral n)) (first G <$> gauges metrics)
   where
-    go timeInterval val (metric, maybeOp) = do
-      let val' = (fromMaybe id maybeOp) val
+    update timeInterval val (metric, maybeOp) = do
+      let val' = fromMaybe id maybeOp $ val
           ratePerSec = val' / timeInterval
       case metric of
-        Counter c -> void $ P.addCounter c val'
-        Gauge g   -> P.setGauge g ratePerSec
+        C c -> void $ addCounter c val'
+        G g -> setGauge g ratePerSec
       info label $
         tag <> " " <> action <> " at the rate of " <> tshow ratePerSec <> " " <>
         unit <>
         "/sec"
 
--- run this inside a forkIO
-initMetricsServer :: Int -> IO ()
-initMetricsServer port = do
-  info metricsInfo $
-    "Starting metrics server at http://localhost:" <> tshow port <> "/"
-  -- send the logging interval
-  run port (PM.prometheus PM.def PM.metricsApp)
-
+--
+-- Streamly Metrics
+--
 -- `withRateGauge`, by its nature, outputs an infinite stream even if the input stream is finite.
 -- This function outputs a finite stream if the input stream is finite.
 finiteWithRateGauge ::
@@ -94,20 +204,3 @@ doAt interval action = SP.tap (Fold step begin end)
     step n _ = pure (n - 1)
     begin = pure interval
     end = const (pure ())
-
-inc :: P.MonadMonitor m => Metric -> m ()
-inc (Counter c) = P.incCounter c
-inc (Gauge g)   = P.incGauge g
-
--- returns the success status of the add operation
-add :: P.MonadMonitor m => Metric -> Double -> m Bool
-add (Counter c) n = P.addCounter c n
-add (Gauge g) n   = P.addGauge g n $> True
-
-get :: MonadIO m => Metric -> m Double
-get (Counter c) = P.getCounter c
-get (Gauge g)   = P.getGauge g
-
-setGauge :: P.MonadMonitor m => Metric -> Double -> m ()
-setGauge (Gauge g) n = P.setGauge g n
-setGauge _ _         = pure ()

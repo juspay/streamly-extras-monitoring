@@ -46,3 +46,6 @@ critical = log L.critical
 
 metricsInfo :: Text
 metricsInfo = "Metrics"
+
+userInputWarning :: Text
+userInputWarning = "User input"

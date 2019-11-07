@@ -25,10 +25,7 @@ type MetricName = Text
 
 type MetricHelp = Text
 
-class P.MonadMonitor m =>
-      MonadMonitor m
-
-
+-- class P.MonadMonitor m => MonadMonitor m
 register :: MonadIO m => Metric s -> m s
 register (Metric s) = P.register s
 
@@ -53,11 +50,11 @@ mkRegCounter name = register . mkCounter name
 getCounter :: MonadIO m => Counter -> m Double
 getCounter = P.getCounter
 
-incCounter :: MonadMonitor m => Counter -> m ()
+incCounter :: P.MonadMonitor m => Counter -> m ()
 incCounter = P.incCounter
 
 -- returns the success status of the add operation
-addCounter :: MonadMonitor m => Counter -> Double -> m Bool
+addCounter :: P.MonadMonitor m => Counter -> Double -> m Bool
 addCounter = P.addCounter
 
 --
@@ -78,40 +75,37 @@ mkRegGauge name = register . mkGauge name
 getGauge :: MonadIO m => Gauge -> m Double
 getGauge = P.getGauge
 
-incGauge :: MonadMonitor m => Gauge -> m ()
+incGauge :: P.MonadMonitor m => Gauge -> m ()
 incGauge = P.incGauge
 
-addGauge :: MonadMonitor m => Gauge -> Double -> m ()
+addGauge :: P.MonadMonitor m => Gauge -> Double -> m ()
 addGauge = P.addGauge
 
-setGauge :: (MonadMonitor m) => Gauge -> Double -> m ()
+setGauge :: (P.MonadMonitor m) => Gauge -> Double -> m ()
 setGauge = P.setGauge
 
 --
 -- Vector
 --
-class P.Label l =>
-      Label l
-
-
+-- class P.Label l => Label l
 type Vector = P.Vector
 
 -- makes a vector
-mkVector :: Label l => l -> Metric s -> Metric (Vector l s)
+mkVector :: P.Label l => l -> Metric s -> Metric (Vector l s)
 mkVector label (Metric s) = Metric . P.vector label $ s
 
 -- makes and registers a vector
-mkRegVector :: (MonadIO m, Label l) => l -> Metric a -> m (Vector l a)
+mkRegVector :: (MonadIO m, P.Label l) => l -> Metric a -> m (Vector l a)
 mkRegVector label = register . mkVector label
 
 withLabel ::
-     (Label l, MonadMonitor m) => Vector l s -> l -> (s -> IO ()) -> m ()
+     (P.Label l, P.MonadMonitor m) => Vector l s -> l -> (s -> IO ()) -> m ()
 withLabel = P.withLabel
 
-removeLabel :: (Label l, MonadMonitor m) => Vector l s -> l -> m ()
+removeLabel :: (P.Label l, P.MonadMonitor m) => Vector l s -> l -> m ()
 removeLabel = P.removeLabel
 
-clearLabels :: (Label l, MonadMonitor m) => Vector l s -> m ()
+clearLabels :: (P.Label l, P.MonadMonitor m) => Vector l s -> m ()
 clearLabels = P.clearLabels
 
 getVectorWith :: Vector l s -> (s -> IO a) -> IO [(l, a)]
@@ -167,7 +161,7 @@ data M
   | G Gauge
 
 -- gauges are set with rate/sec
-streamlyInfoLogger :: (MonadMonitor IO) => SE.Logger LoggerDetails
+streamlyInfoLogger :: SE.Logger LoggerDetails
 streamlyInfoLogger LoggerDetails {..} _ n = do
   mapM_ (update intervalSecs (fromIntegral n)) (first C <$> counters metrics)
   mapM_ (update intervalSecs (fromIntegral n)) (first G <$> gauges metrics)

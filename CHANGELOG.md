@@ -1,5 +1,6 @@
 # Revision history for streamly-extras
 #### Follows Semver versioning (semver.org)
+Version Format: Major.Minor.Patch-prerelease
 
 ## 0.0.1 -- 2019-10-29
 * First version. Released on an unsuspecting world.
@@ -20,3 +21,6 @@
 
 ## 2.0.0 -- 2019-11-07
 * Adds `vector` and `label` support - Major design change
+
+## 2.0.1 -- 2019-11-08
+* Updates `streamly` and `streamly-extras` versions

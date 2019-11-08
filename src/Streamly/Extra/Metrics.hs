@@ -15,10 +15,10 @@ import           Data.Text                         (Text)
 import           Network.Wai.Handler.Warp          (run)
 import qualified Network.Wai.Middleware.Prometheus as PM
 import qualified Prometheus                        as P
-import           Streamly                          (MonadAsync, SerialT)
+import           Streamly                          (IsStream, MonadAsync)
 import qualified Streamly.Extra                    as SE
 import           Streamly.Extra.Logging            (info, metricsInfo)
-import           Streamly.Internal                 (Fold (..))
+import           Streamly.Internal.Data.Fold       (Fold (..))
 import qualified Streamly.Prelude                  as SP
 
 type MetricName = Text
@@ -183,15 +183,21 @@ streamlyInfoLogger LoggerDetails {..} _ n = do
 -- `withRateGauge`, by its nature, outputs an infinite stream even if the input stream is finite.
 -- This function outputs a finite stream if the input stream is finite.
 finiteWithRateGauge ::
-     forall m a logger. MonadAsync m
-  => MonadReader (SE.LoggerConfig logger) m =>
-       logger -> SerialT m a -> SerialT m a
+     ( IsStream t
+     , MonadIO m
+     , MonadAsync m
+     , MonadReader (SE.LoggerConfig tag) (t m)
+     , Semigroup (t m (Maybe b))
+     )
+  => tag
+  -> t m b
+  -> t m b
 finiteWithRateGauge logger s =
   SP.mapMaybe id $
   SP.takeWhile isJust $ SE.withRateGauge logger $ (Just <$> s) <> pure Nothing
 
 -- Does @action at @interval and returns the stream as is
-doAt :: (Monad m) => Int -> (a -> m ()) -> SerialT m a -> SerialT m a
+doAt :: (Monad m, IsStream t) => Int -> (a -> m ()) -> t m a -> t m a
 doAt interval action = SP.tap (Fold step begin end)
   where
     step 0 a = action a $> interval

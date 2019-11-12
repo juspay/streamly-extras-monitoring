@@ -177,11 +177,13 @@ streamlyInfoLogger LoggerDetails {..} _ n = do
           ratePerSec = val' / timeInterval
       case metric of
         C c -> void $ addCounter c val'
-        G g -> setGauge g ratePerSec
-      info label $
-        tag <> " " <> action <> " at the rate of " <> tshow ratePerSec <> " " <>
-        unit <>
-        "/sec"
+        G g -> do
+          setGauge g ratePerSec
+          info label $
+            tag <> " " <> action <> " at the rate of " <> tshow ratePerSec <>
+            " " <>
+            unit <>
+            "/sec"
 
 --
 -- Streamly Metrics

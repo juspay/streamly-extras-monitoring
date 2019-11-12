@@ -84,6 +84,12 @@ addGauge = P.addGauge
 setGauge :: (P.MonadMonitor m) => Gauge -> Double -> m ()
 setGauge = P.setGauge
 
+subGauge :: P.MonadMonitor m => Gauge -> Double -> m ()
+subGauge = P.subGauge
+
+decGauge :: P.MonadMonitor m => Gauge -> m ()
+decGauge = P.decGauge
+
 --
 -- Vector
 --

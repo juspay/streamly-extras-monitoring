@@ -30,7 +30,7 @@ Version Format: Major.Minor.Patch-prerelease
 * Updates `streamly` and `streamly-extras` versions
 
 ## 2.1.0 -- 2019-11-12
-### Non-breaking API Changes
+### Backward compatible API Changes
 * Adds `subGauge` and `decGauge` functions
 ### Non-API Changes
 * Updates `streamly` version

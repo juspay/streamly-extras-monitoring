@@ -15,8 +15,8 @@ let
 
           streamly = self.callCabal2nix "streamly" (pkgs.fetchgit {
             url = "https://github.com/composewell/streamly.git";
-            sha256 = "1di6d2b9rxcgf6jrg57r0hhkasbr7b181v96a177spjw23j5sxv9";
-            rev = "be920a2bfa906d85ad7c41b6e6b9a7ce731ac774";
+            sha256 = "11bl9a1j5nmfys4h519j5v8m4sa24pjdfabaaqcmpfp4pl0lgqwr";
+            rev = "bea83e96103d51c9571ce560a75ab3031cb14fa6";
             fetchSubmodules = true;
           }) { };
 

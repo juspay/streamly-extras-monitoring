@@ -22,8 +22,8 @@ let
 
           streamly-extras = self.callCabal2nix "streamly-extras" (pkgs.fetchgit {
             url = "https://github.com/juspay/streamly-extras";
-            sha256 = "1i50iy52fgq7gwdfil06n9hagsmklia41vg33idzrx80vf44xckq";
-            rev = "3b950a04655a357f2779660390094027d52cea9e";
+            sha256 = "1mhj18i8s6yhkpj8q0ybwq4h4bi2767yp5ng4884dv3x175s91rd";
+            rev = "7cb32f7fd71e978a8be53eedc1754eaf25fb7c17";
             fetchSubmodules = true;
           }) { };
 

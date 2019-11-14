@@ -9,4 +9,4 @@ Helper functions for logging and metrics - both generic and Streamly specific
 
 ## Links
 [CHANGELOG](CHANGELOG.md) <br>
-[Github Releases](https://github.com/juspay/streamly-extras-monitoring/releases)
+[Releases](https://github.com/juspay/streamly-extras-monitoring/releases)

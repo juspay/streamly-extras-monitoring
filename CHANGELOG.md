@@ -2,6 +2,11 @@
 ### Follows [Semver](http://www.semver.org) versioning
 ### **Version Format:** `Major.Minor.Patch-prerelease`
 
+## 2.1.1 -- 2019-11-14
+### Non-API Changes
+* Updates `streamly-extras` version
+<br>
+
 ## 2.1.0 -- 2019-11-12
 ### Backward compatible API Changes
 * Adds `subGauge` and `decGauge` functions

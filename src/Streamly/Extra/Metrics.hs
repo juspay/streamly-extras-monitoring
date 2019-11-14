@@ -131,6 +131,12 @@ data MetricDetails =
     , gauges   :: [(Gauge, MaybeUpdateFn)]
     }
 
+instance Eq MetricDetails where
+  _ == _ = True
+
+instance Ord MetricDetails where
+  _ <= _ = True
+
 -- run this inside a forkIO
 initMetricsServer :: Int -> IO ()
 initMetricsServer port = do
@@ -149,7 +155,7 @@ data LoggerDetails =
     , action       :: Text
     , intervalSecs :: Double
     , metrics      :: MetricDetails
-    }
+    } deriving (Eq, Ord)
 
 defaultLoggerDetails :: LoggerDetails
 defaultLoggerDetails =
@@ -196,6 +202,7 @@ finiteWithRateGauge ::
      , MonadAsync m
      , MonadReader (SE.LoggerConfig tag) (t m)
      , Semigroup (t m (Maybe b))
+     , Ord tag
      )
   => tag
   -> t m b

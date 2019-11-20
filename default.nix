@@ -15,15 +15,15 @@ let
 
           streamly = self.callCabal2nix "streamly" (pkgs.fetchgit {
             url = "https://github.com/composewell/streamly.git";
-            sha256 = "11bl9a1j5nmfys4h519j5v8m4sa24pjdfabaaqcmpfp4pl0lgqwr";
-            rev = "bea83e96103d51c9571ce560a75ab3031cb14fa6";
+            rev = "v0.7.0";
+            sha256 = "10qm72l7r4drqsajqrg3i1pqdi1bscz8p3k23vpi2ahrscd9kfdz";
             fetchSubmodules = true;
           }) { };
 
           streamly-extras = self.callCabal2nix "streamly-extras" (pkgs.fetchgit {
             url = "https://github.com/juspay/streamly-extras";
-            sha256 = "1mhj18i8s6yhkpj8q0ybwq4h4bi2767yp5ng4884dv3x175s91rd";
-            rev = "7cb32f7fd71e978a8be53eedc1754eaf25fb7c17";
+            rev = "a1d60ce8df90a9325a41a5ab6037812c0f31c2ed";
+            sha256 = "0rc18y9qz0vwvnxpzz3f3gx2hj2fwyidk3r3hkdqb7pymskdniqm";
             fetchSubmodules = true;
           }) { };
 

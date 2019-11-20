@@ -1,7 +1,7 @@
 cabal-version:       2.4
 name:                streamly-extras-monitoring
--- version-format => Major.Minor.Patch[.Alpha]   (alphabetic chars are not allowed in cabal version, so alpha versions are also numbers)
-version:             2.2.0.0
+-- version-format => Major.Minor.Patch[.Alpha]   (cabal does not allow alphabetic chars in version, so alpha versions are also numbers)
+version:             3.0.1
 synopsis:            Helper functions for logging and metrics of streams
 homepage:            https://github.com/juspay/streamly-extras-monitoring
 license:             BSD-3-Clause

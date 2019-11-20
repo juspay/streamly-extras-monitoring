@@ -3,10 +3,6 @@
 ### **Version Format:** `Major.Minor.Patch-prerelease`
 
 ## 3.0.1 -- 2019-11-20
-### Breaking API Changes
-* Adds a `log` field in `LoggerDetails` that is a tuple of `(Bool, MaybeUpdateFn :: Maybe (Double -> Double))`
-   * `Bool` tells whether you want to log this `Stream`
-   * `MaybeUpdateFn` is applied to `n` before using it for logging
 ### Non-API Changes
 * Updates `Streamly` to `v0.7.0`
 * Updates `streamly-extras` version accordingly

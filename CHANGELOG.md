@@ -2,7 +2,13 @@
 ### Follows [Semver](http://www.semver.org) versioning
 ### **Version Format:** `Major.Minor.Patch-prerelease`
 
-## 2.1.1 -- 2019-11-14
+### 2.2.0 -- 2019-11-19
+### Breaking API Changes
+* Adds a `log` field in `LoggerDetails` that is a tuple of `(Bool, MaybeUpdateFn :: Maybe (Double -> Double))`
+   * `Bool` tells whether you want to log this `Stream`
+   * `MaybeUpdateFn` is applied to `n` before using it for logging<br>
+
+## 2.1.2 -- 2019-11-14
 ### Non-API Changes
 * Updates `streamly-extras` version
 <br>

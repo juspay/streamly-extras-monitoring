@@ -5,7 +5,7 @@
 module Streamly.Extra.Metrics where
 
 import           BasicPrelude                      (tshow)
-import           Control.Monad                     (void)
+import           Control.Monad                     (void, when)
 import           Control.Monad.IO.Class            (MonadIO)
 import           Control.Monad.Reader              (MonadReader)
 import           Data.Bifunctor                    (first)
@@ -14,6 +14,7 @@ import           Data.Maybe                        (fromMaybe, isJust)
 import           Data.Text                         (Text)
 import           Network.Wai.Handler.Warp          (run)
 import qualified Network.Wai.Middleware.Prometheus as PM
+import           Prelude                           hiding (log)
 import qualified Prometheus                        as P
 import           Streamly                          (IsStream, MonadAsync)
 import qualified Streamly.Extra                    as SE
@@ -132,10 +133,10 @@ data MetricDetails =
     }
 
 instance Eq MetricDetails where
-  _ == _ = True
+  _ == _ = False
 
 instance Ord MetricDetails where
-  _ <= _ = True
+  _ <= _ = False
 
 -- run this inside a forkIO
 initMetricsServer :: Int -> IO ()
@@ -154,8 +155,15 @@ data LoggerDetails =
     , unit         :: Text
     , action       :: Text
     , intervalSecs :: Double
+    , log          :: (Bool, MaybeUpdateFn)
     , metrics      :: MetricDetails
-    } deriving (Eq, Ord)
+    }
+
+instance Eq LoggerDetails where
+  _ == _ = False
+
+instance Ord LoggerDetails where
+  _ <= _ = False
 
 defaultLoggerDetails :: LoggerDetails
 defaultLoggerDetails =
@@ -165,6 +173,7 @@ defaultLoggerDetails =
     , unit = "defaultUnit"
     , action = "defaultAction"
     , intervalSecs = 1.0
+    , log = (True, Nothing)
     , metrics = MetricDetails {counters = [], gauges = []}
     }
 
@@ -175,21 +184,24 @@ data M
 -- gauges are set with rate/sec
 streamlyInfoLogger :: SE.Logger LoggerDetails
 streamlyInfoLogger LoggerDetails {..} _ n = do
-  mapM_ (update intervalSecs (fromIntegral n)) (first C <$> counters metrics)
-  mapM_ (update intervalSecs (fromIntegral n)) (first G <$> gauges metrics)
+  mapM_ (update intervalSecs n') (first C <$> counters metrics)
+  mapM_ (update intervalSecs n') (first G <$> gauges metrics)
+  let (shouldLog, maybeOp) = log
+   in when shouldLog $
+           info label $
+             tag <> " " <> action <> " at the rate of " <>
+             tshow (fromMaybe id maybeOp n' / intervalSecs) <>
+             " " <>
+             unit <>
+             "/sec"
   where
+    n' = fromIntegral n
     update timeInterval val (metric, maybeOp) = do
-      let val' = fromMaybe id maybeOp $ val
+      let val' = fromMaybe id maybeOp val
           ratePerSec = val' / timeInterval
       case metric of
         C c -> void $ addCounter c val'
-        G g -> do
-          setGauge g ratePerSec
-          info label $
-            tag <> " " <> action <> " at the rate of " <> tshow ratePerSec <>
-            " " <>
-            unit <>
-            "/sec"
+        G g -> setGauge g ratePerSec
 
 --
 -- Streamly Metrics

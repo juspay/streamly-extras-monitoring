@@ -9,6 +9,7 @@ import           Control.Monad                     (void, when)
 import           Control.Monad.IO.Class            (MonadIO)
 import           Control.Monad.Reader              (MonadReader)
 import           Data.Bifunctor                    (first)
+import           Data.Function                     (on)
 import           Data.Functor                      (($>))
 import           Data.Maybe                        (fromMaybe, isJust)
 import           Data.Text                         (Text)
@@ -132,12 +133,6 @@ data MetricDetails =
     , gauges   :: [(Gauge, MaybeUpdateFn)]
     }
 
-instance Eq MetricDetails where
-  _ == _ = False
-
-instance Ord MetricDetails where
-  _ <= _ = False
-
 -- run this inside a forkIO
 initMetricsServer :: Int -> IO ()
 initMetricsServer port = do
@@ -160,10 +155,14 @@ data LoggerDetails =
     }
 
 instance Eq LoggerDetails where
-  _ == _ = False
+  (==) =
+    (==) `on`
+    (\x -> (label x, tag x, unit x, action x, intervalSecs x, fst . log $ x))
 
 instance Ord LoggerDetails where
-  _ <= _ = False
+  compare =
+    compare `on`
+    (\x -> (label x, tag x, unit x, action x, intervalSecs x, fst . log $ x))
 
 defaultLoggerDetails :: LoggerDetails
 defaultLoggerDetails =
@@ -188,12 +187,12 @@ streamlyInfoLogger LoggerDetails {..} _ n = do
   mapM_ (update intervalSecs n') (first G <$> gauges metrics)
   let (shouldLog, maybeOp) = log
    in when shouldLog $
-           info label $
-             tag <> " " <> action <> " at the rate of " <>
-             tshow (fromMaybe id maybeOp n' / intervalSecs) <>
-             " " <>
-             unit <>
-             "/sec"
+      info label $
+      tag <> " " <> action <> " at the rate of " <>
+      tshow (fromMaybe id maybeOp n' / intervalSecs) <>
+      " " <>
+      unit <>
+      "/sec"
   where
     n' = fromIntegral n
     update timeInterval val (metric, maybeOp) = do

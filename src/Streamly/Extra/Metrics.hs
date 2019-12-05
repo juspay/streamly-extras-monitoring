@@ -7,21 +7,16 @@ module Streamly.Extra.Metrics where
 import           BasicPrelude                      (tshow)
 import           Control.Monad                     (void, when)
 import           Control.Monad.IO.Class            (MonadIO)
-import           Control.Monad.Reader              (MonadReader)
 import           Data.Bifunctor                    (first)
 import           Data.Function                     (on)
-import           Data.Functor                      (($>))
-import           Data.Maybe                        (fromMaybe, isJust)
+import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (Text)
 import           Network.Wai.Handler.Warp          (run)
 import qualified Network.Wai.Middleware.Prometheus as PM
 import           Prelude                           hiding (log)
 import qualified Prometheus                        as P
-import           Streamly                          (IsStream, MonadAsync)
 import qualified Streamly.Extra                    as SE
 import           Streamly.Extra.Logging            (info, metricsInfo)
-import           Streamly.Internal.Data.Fold       (Fold (..))
-import qualified Streamly.Prelude                  as SP
 
 type MetricName = Text
 
@@ -194,39 +189,12 @@ streamlyInfoLogger LoggerDetails {..} _ n = do
       unit <>
       "/sec"
   where
+    n' :: Double
     n' = fromIntegral n
+    update :: P.MonadMonitor m => Double -> Double -> (M, MaybeUpdateFn) -> m ()
     update timeInterval val (metric, maybeOp) = do
       let val' = fromMaybe id maybeOp val
           ratePerSec = val' / timeInterval
       case metric of
         C c -> void $ addCounter c val'
         G g -> setGauge g ratePerSec
-
---
--- Streamly Metrics
---
--- `withRateGauge`, by its nature, outputs an infinite stream even if the input stream is finite.
--- This function outputs a finite stream if the input stream is finite.
-finiteWithRateGauge ::
-     ( IsStream t
-     , MonadIO m
-     , MonadAsync m
-     , MonadReader (SE.LoggerConfig tag) (t m)
-     , Semigroup (t m (Maybe b))
-     , Ord tag
-     )
-  => tag
-  -> t m b
-  -> t m b
-finiteWithRateGauge logger s =
-  SP.mapMaybe id $
-  SP.takeWhile isJust $ SE.withRateGauge logger $ (Just <$> s) <> pure Nothing
-
--- Does @action at @interval and returns the stream as is
-doAt :: (Monad m, IsStream t) => Int -> (a -> m ()) -> t m a -> t m a
-doAt interval action = SP.tap (Fold step begin end)
-  where
-    step 0 a = action a $> interval
-    step n _ = pure (n - 1)
-    begin = pure interval
-    end = const (pure ())

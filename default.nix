@@ -6,19 +6,11 @@ let
     packageOverrides = pkgs: rec {
       haskellPackages = pkgs.haskellPackages.override {
         overrides = self: super: rec {
-          ghc =
-            super.ghc // { withPackages = if withHoogle then super.ghc.withHoogle else super.ghc ; };
-          ghcWithPackages =
-            self.ghc.withPackages;
-          streamly-extras-monitoring =
-            self.callCabal2nix "streamly-extras-monitoring" (pkgs.lib.cleanSource ./.) { };
+          ghc = super.ghc // { withPackages = if withHoogle then super.ghc.withHoogle else super.ghc ; };
 
-          streamly = self.callCabal2nix "streamly" (pkgs.fetchgit {
-            url = "https://github.com/composewell/streamly.git";
-            rev = "v0.7.0";
-            sha256 = "10qm72l7r4drqsajqrg3i1pqdi1bscz8p3k23vpi2ahrscd9kfdz";
-            fetchSubmodules = true;
-          }) { };
+          ghcWithPackages = self.ghc.withPackages;
+
+          streamly-extras-monitoring = self.callCabal2nix "streamly-extras-monitoring" (pkgs.lib.cleanSource ./.) { };
 
           streamly-extras = self.callCabal2nix "streamly-extras" (pkgs.fetchgit {
             url = "https://github.com/juspay/streamly-extras";
@@ -27,6 +19,12 @@ let
             fetchSubmodules = true;
           }) { };
 
+          streamly = self.callCabal2nix "streamly" (pkgs.fetchgit {
+            url = "https://github.com/composewell/streamly.git";
+            rev = "v0.7.0";
+            sha256 = "10qm72l7r4drqsajqrg3i1pqdi1bscz8p3k23vpi2ahrscd9kfdz";
+            fetchSubmodules = true;
+          }) { };
         };
       };
     };

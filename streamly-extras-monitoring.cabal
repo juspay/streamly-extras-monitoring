@@ -22,7 +22,6 @@ library
                    , monad-log
                    , mtl
                    , prometheus-client
-                   , streamly
                    , streamly-extras
                    , text
                    , wai

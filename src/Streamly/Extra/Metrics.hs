@@ -127,6 +127,7 @@ data MetricDetails =
     { counters        :: [(Counter, MaybeUpdateFn)]
     , gauges          :: [(Gauge, MaybeUpdateFn)]
     , vector1Counters :: [(Vector P.Label1 Counter, MaybeUpdateFn)]
+    , vector1Gauges   :: [(Vector P.Label1 Gauge, MaybeUpdateFn)]
     }
 
 -- run this inside a forkIO
@@ -169,20 +170,22 @@ defaultLoggerDetails =
     , action = "defaultAction"
     , intervalSecs = 1.0
     , log = (True, Nothing)
-    , metrics = MetricDetails {counters = [], gauges = [], vector1Counters = []}
+    , metrics = MetricDetails {counters = [], gauges = [], vector1Counters = [], vector1Gauges = []}
     }
 
 data M
   = C Counter
   | G Gauge
-  | V (Vector P.Label1 Counter)
+  | V1C (Vector P.Label1 Counter)
+  | V1G (Vector P.Label1 Gauge)
 
 -- gauges are set with rate/sec
 streamlyInfoLogger :: SE.Logger LoggerDetails
 streamlyInfoLogger LoggerDetails {..} _ n = do
   mapM_ (update intervalSecs n') (first C <$> counters metrics)
   mapM_ (update intervalSecs n') (first G <$> gauges metrics)
-  mapM_ (update intervalSecs n') (first V <$> vector1Counters metrics)
+  mapM_ (update intervalSecs n') (first V1C <$> vector1Counters metrics)
+  mapM_ (update intervalSecs n') (first V1G <$> vector1Gauges metrics)
   let (shouldLog, maybeOp) = log
    in when shouldLog $
       info label $
@@ -199,6 +202,7 @@ streamlyInfoLogger LoggerDetails {..} _ n = do
       let val' = fromMaybe id maybeOp val
           ratePerSec = val' / timeInterval
       case metric of
-        C c -> void $ addCounter c val'
-        G g -> setGauge g ratePerSec
-        V v -> withLabel v tag (void . flip addCounter val')
+        C c   -> void $ addCounter c val'
+        G g   -> setGauge g ratePerSec
+        V1C v -> withLabel v tag (void . flip addCounter val')
+        V1G v -> withLabel v tag (flip setGauge ratePerSec)

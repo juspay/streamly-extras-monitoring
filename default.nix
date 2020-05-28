@@ -14,15 +14,22 @@ let
 
           streamly-extras = self.callCabal2nix "streamly-extras" (pkgs.fetchgit {
             url = "https://github.com/juspay/streamly-extras";
-            rev = "a1d60ce8df90a9325a41a5ab6037812c0f31c2ed";
-            sha256 = "0rc18y9qz0vwvnxpzz3f3gx2hj2fwyidk3r3hkdqb7pymskdniqm";
+            rev = "560117cf20d04b1d5a48cefc1d4d046114af1fa6";
+            sha256 = "14niq7n456yd9s2z69irxcdbfvnjkkgl0a071njdr8n6h0hck026";
             fetchSubmodules = true;
           }) { };
 
+          fusion-plugin-types = self.callCabal2nix "fusion-plugin-types" (pkgs.fetchgit {
+            url = "https://github.com/composewell/fusion-plugin-types.git";
+            rev = "1a7e1c39b4496543b2dc95d59aafbf44041554f1";
+            sha256 = "1mmph6gawi4cbsqmswawi1c951f6pq41qfqjbvnygm36d2qfv64i";
+            fetchSubmodules = true;
+            }) { };
+
           streamly = self.callCabal2nix "streamly" (pkgs.fetchgit {
             url = "https://github.com/composewell/streamly.git";
-            rev = "v0.7.0";
-            sha256 = "10qm72l7r4drqsajqrg3i1pqdi1bscz8p3k23vpi2ahrscd9kfdz";
+            rev = "500d187b8fb5b6b1bc424725dd179650fb41c49c";
+            sha256 = "175cqn0sxg8r32f3dd0alkivkvjrwhmwm7xkmf4ki2j68smmjc3y";
             fetchSubmodules = true;
           }) { };
         };

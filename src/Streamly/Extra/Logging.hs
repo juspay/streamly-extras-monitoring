@@ -1,51 +1,55 @@
 module Streamly.Extra.Logging where
 
-import           Control.Monad.Catch     (MonadMask)
-import           Control.Monad.IO.Class  (MonadIO)
-import qualified Control.Monad.Log       as L
-import qualified Control.Monad.Log.Label as Label
-import           Data.Text               (Text)
-import           Prelude                 hiding (log)
+import           Control.Monad.IO.Class (MonadIO, liftIO)
+import           Control.Monad.Logger   (LogLevel (LevelOther), LogStr, LoggingT (LoggingT), defaultLoc,
+                                         runStderrLoggingT, runStdoutLoggingT, toLogStr)
+import qualified Data.Text              as T
+import           Data.Time.Clock        (getCurrentTime)
+import           Data.Time.Format       (defaultTimeLocale, formatTime)
 
-logger :: MonadIO m => Text -> m (L.Logger Label.Label)
-logger label =
-  L.makeDefaultLogger
-    "%FT%T%z"
-    (L.LogStderr 4096)
-    L.levelDebug
-    (Label.Label label)
+type Label = T.Text
 
-log ::
-     (MonadIO m, MonadMask m)
-  => (t -> L.LogT Label.Label m b)
-  -> Text
-  -> t
-  -> m b
-log level label msg = do
-  l <- logger label
-  L.runLogTSafe l $ level msg
+type Message = T.Text
 
-type LogFn m
-   = (MonadIO m, MonadMask m) =>
-       Text -> Text -> m ()
+logger ::
+     MonadIO m
+  => (LoggingT m () -> m ())
+  -> LogLevel
+  -> Label
+  -> Message
+  -> m ()
+logger logFn level label msg = do
+  time <- formatTime defaultTimeLocale "%FT%T%z" <$> liftIO getCurrentTime
+  logFn $
+    loggerT
+      (toLogStr ("[" <> T.pack time <> "] " <> "[" <> label <> "] " <> msg))
+  where
+    loggerT :: MonadIO m => LogStr -> LoggingT m ()
+    loggerT msg' = LoggingT (\fn -> liftIO $ fn defaultLoc "" level msg')
 
-debug :: LogFn m
-debug = log L.debug
+loggerStderr :: MonadIO m => LogLevel -> Label -> Message -> m ()
+loggerStderr = logger runStderrLoggingT
 
-info :: LogFn m
-info = log L.info
+loggerStdout :: MonadIO m => LogLevel -> Label -> Message -> m ()
+loggerStdout = logger runStdoutLoggingT
 
-warning :: LogFn m
-warning = log L.warning
+debug :: MonadIO m => Label -> Message -> m ()
+debug = loggerStderr (LevelOther "DEBUG")
 
-error :: LogFn m
-error = log L.error
+info :: MonadIO m => Label -> Message -> m ()
+info = loggerStderr (LevelOther "INFO")
 
-critical :: LogFn m
-critical = log L.critical
+warning :: MonadIO m => Label -> Message -> m ()
+warning = loggerStderr (LevelOther "WARNING")
 
-metricsInfo :: Text
+error :: MonadIO m => Label -> Message -> m ()
+error = loggerStderr (LevelOther "ERROR")
+
+critical :: MonadIO m => Label -> Message -> m ()
+critical = loggerStderr (LevelOther "CRITICAL ")
+
+metricsInfo :: T.Text
 metricsInfo = "Metrics"
 
-userInputWarning :: Text
+userInputWarning :: T.Text
 userInputWarning = "User input"

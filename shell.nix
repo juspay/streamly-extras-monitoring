@@ -10,7 +10,7 @@ in drv.env.overrideAttrs (attrs: {
       ghcid
       hindent
       hlint
-      stylish-haskell
+      # stylish-haskell
     ] ++
     attrs.buildInputs;
 })

@@ -19,11 +19,12 @@ library
   build-depends:     base
                    , basic-prelude
                    , exceptions
-                   , monad-log
+                   , monad-logger
                    , mtl
                    , prometheus-client
                    , streamly-extras
                    , text
+                   , time
                    , wai
                    , wai-middleware-prometheus
                    , warp

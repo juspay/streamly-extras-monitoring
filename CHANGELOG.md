@@ -2,6 +2,16 @@
 ### Follows [Semver](http://www.semver.org) versioning
 ### **Version Format:** `Major.Minor.Patch-prerelease`
 
+## 4.0.0 -- 2020-06-03
+### Breaking API Changes
+* Adds vector support: `vector1Counters` and `vector1Gauges` are added to `MetricDetails` type
+* Removes `finiteWithRateGauge` as `Streamly.Extra.withRateGauge` supports finite streams now
+* `doAt` is moved to `streamly-extras` package
+### Non-API Changes
+* Updates `streamly`, `streamly-extras` versions
+* Updates `nix-pkgs` version to 20.03
+* Replaces `monad-log` package with `monad-logger` as `monad-log` is not being maintained since Apr. 2016
+
 ## 3.0.1 -- 2019-11-20
 ### Non-API Changes
 * Updates `Streamly` to `v0.7.0`

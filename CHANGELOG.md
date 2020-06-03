@@ -6,7 +6,8 @@
 ### Breaking API Changes
 * Adds vector support: `vector1Counters` and `vector1Gauges` are added to `MetricDetails` type
 * Removes `finiteWithRateGauge` as `Streamly.Extra.withRateGauge` supports finite streams now
-* `doAt` is moved to `streamly-extras` package
+* `doAt` is removed. You can use [intersperseSuffixBySpan](https://hackage.haskell.org/package/streamly-0.7.2/docs/Streamly-Internal-Prelude.html#v:intersperseSuffixBySpan) instead. Like:
+`doAt interval action stream = mapMaybe id (intersperseSuffixBySpan interval (Nothing <$ action) (Just <$> stream))`
 ### Non-API Changes
 * Updates `streamly`, `streamly-extras` versions
 * Updates `nix-pkgs` version to 20.03

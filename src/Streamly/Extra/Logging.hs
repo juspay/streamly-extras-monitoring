@@ -46,7 +46,7 @@ error :: MonadIO m => Label -> Message -> m ()
 error = loggerStderr (LevelOther "ERROR")
 
 critical :: MonadIO m => Label -> Message -> m ()
-critical = loggerStderr (LevelOther "CRITICAL ")
+critical = loggerStderr (LevelOther "CRITICAL")
 
 metricsInfo :: T.Text
 metricsInfo = "Metrics"
